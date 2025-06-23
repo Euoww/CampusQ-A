@@ -1,0 +1,42 @@
+{% comment %}
+This is a reusable template for displaying a list of comments and a form to add a new one.
+It can be included for any object that supports comments (like a question or an answer).
+
+It expects the following context variables:
+- `comments`: A list or queryset of comment objects to display.
+- `content_object`: The parent object (e.g., the question or answer) to which a new comment will be attached.
+- `comment_form`: The form instance for submitting a new comment.
+{% endcomment %}
+{% load static %}
+
+{% if comments %}
+    <ul class="comment-list">
+        {% for comment in comments %}
+            <li class="comment-item">
+                <div class="comment-header">
+                    {% if comment.author.profile.avatar %}
+                        <img src="{{ comment.author.profile.avatar.url }}" alt="{{ comment.author.username }}" class="author-avatar author-avatar-sm">
+                    {% else %}
+                        <img src="{% static 'images/default_avatar.png' %}" alt="默认头像" class="author-avatar author-avatar-sm">
+                    {% endif %}
+                    <strong>{{ comment.author.username }}</strong>
+                    <small class="text-muted">{{ comment.created_at|date:"Y-m-d" }}</small>
+                </div>
+                <div class="comment-body">
+                    {{ comment.content|linebreaksbr }}
+                </div>
+            </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p class="no-comments">暂无评论。</p>
+{% endif %}
+
+{% if user.is_authenticated %}
+    <form method="post" action="{% url 'add_comment' content_object.get_content_type_id content_object.id %}" class="comment-form">
+        {% csrf_token %}
+        {# Assuming your comment form has a 'content' field #}
+        {{ comment_form.content }}
+        <button type="submit" class="btn btn-sm btn-secondary">发表评论</button>
+    </form>
+{% endif %}

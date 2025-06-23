@@ -1,0 +1,62 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.pyc
+*.pyd
+*.pyo
+.Python/
+build/
+develop-eggs/
+dist/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.rst.rej
+*.pyi
+*.aux
+*.bak
+*.log
+*.out
+*.toc
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+.env
+.venv/ # 虚拟环境目录
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Editors
+.idea/ # PyCharm 项目文件
+*.sublime-project
+*.sublime-workspace
+.vscode/ # VS Code 项目文件
+
+# Django stuff:
+*.log
+*.pot
+*.mo
+db.sqlite3 # SQLite 数据库文件 (如果你用MySQL则不需要，但为了兼容性可以保留)
+media/ # 用户上传的媒体文件 (重要!)
+/static_collected/ # collectstatic 命令收集到的文件，一般只部署，不提交
+local_settings.py # 如果你有本地敏感配置 (如SECRET_KEY) 放在单独的文件中
+*.sql # 数据库导出文件
+
+# Mac/Linux stuff:
+.DS_Store
+
+# Windows stuff:
+Thumbs.db

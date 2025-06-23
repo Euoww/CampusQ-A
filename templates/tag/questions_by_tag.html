@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}标签: {{ tag.name }} - 校园问答系统{% endblock %}
+
+{% block content %}
+<div class="question-list-container"> {# 复用 question_list.html 中的主容器样式 #}
+    <h1>标签: "{{ tag.name }}" 的相关问题</h1>
+
+    {% if questions %}
+        <div class="question-list"> {# 复用问题列表的容器样式 #}
+            {% for question in questions %}
+                <div class="question-item"> {# 复用问题项的样式 #}
+                    <h3><a href="{% url 'question_detail' question.id %}">{{ question.title }}</a></h3>
+                    <p>{{ question.content|truncatechars:150 }}</p>
+                    <small>
+                        发布者：
+                        {% if question.is_anonymous %}匿名{% else %}{{ question.author.username }}{% endif %}
+                        · {{ question.created_at|date:"Y-m-d H:i" }}
+                        {% if question.tags.all %}
+                            | 标签:
+                            {# 遍历当前问题的标签，并确保它们也是可点击的 #}
+                            {% for q_tag in question.tags.all %} {# 使用不同的循环变量名 (q_tag) 以免与外层的 'tag' 变量冲突 #}
+                                <span class="tag">
+                                    <a href="{% url 'questions_by_tag' q_tag.pk %}">{{ q_tag.name }}</a>
+                                </span>{% if not forloop.last %}, {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                        | 浏览: {{ question.view_count }}
+                    </small>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="no-results">目前没有与标签 "{{ tag.name }}" 相关的任何问题。</p>
+    {% endif %}
+</div>
+{% endblock %}

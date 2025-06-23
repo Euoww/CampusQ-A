@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}搜索结果 - 校园问答系统{% endblock %}
+
+{% block content %}
+<div class="search-results-container">
+    <h1>搜索结果</h1>
+
+    <div class="search-query-display">
+        {% if query %}
+            <p>与关键词 "<strong>{{ query }}</strong>" 相关的搜索结果:</p>
+        {% else %}
+            <p>请输入关键词进行搜索。</p>
+        {% endif %}
+    </div>
+
+    {% if results %}
+        <div class="question-list"> {# 复用 question_list 中的样式 #}
+            {% for question in results %}
+                <div class="question-item">
+                    <h3><a href="{% url 'question_detail' question.id %}">{{ question.title }}</a></h3>
+                    <p>{{ question.content|truncatechars:150 }}</p>
+                    <small>
+                        发布者：
+                        {% if question.is_anonymous %}匿名{% else %}{{ question.author.username }}{% endif %}
+                        · {{ question.created_at|date:"Y-m-d H:i" }}
+                        {% if question.tags.all %}
+                            | 标签:
+                            {% for tag in question.tags.all %}
+                                <span class="tag">{{ tag.name }}</span>{% if not forloop.last %}, {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                        | 浏览: {{ question.view_count }}
+                    </small>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        {% if query %}
+            <p class="no-results">没有找到与 "{{ query }}" 相关的结果。</p>
+        {% else %}
+            {# 如果没有查询，且没有结果，这里会显示空白，可以添加更多提示 #}
+        {% endif %}
+    {% endif %}
+
+    {# 可选：在此处添加分页，如果搜索结果很多的话 #}
+</div>
+{% endblock %}

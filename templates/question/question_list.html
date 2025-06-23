@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}问题列表 - 校园问答平台{% endblock %}
+
+{% block content %}
+<div class="question-list-container">
+    <div class="search-hero">
+        <h2>探索新知，解答疑惑</h2>
+        <p>在这里，你可以找到任何你关心问题的答案。</p>
+        <div class="search-box-container">
+            <form action="{% url 'search' %}" method="get" class="search-form">
+                <input type="text" name="q" placeholder="搜索问题、内容或标签..." value="{{ request.GET.q|default_if_none:'' }}">
+                <button type="submit" class="search-btn">搜索</button>
+            </form>
+        </div>
+    </div>
+    {% if page_obj %}
+        <div class="question-list">
+            {% for question in page_obj %}
+                <div class="question-item">
+                    <h3><a href="{% url 'question_detail' question.id %}">{{ question.title }}</a></h3>
+                    <p>{{ question.content|truncatewords:25 }}</p>
+
+                    <div class="question-meta">
+                        <span class="meta-item">
+                            <strong>发布者:</strong>
+                            {% if question.is_anonymous %}
+                                匿名
+                            {% else %}
+                                {{ question.author.username }}
+                            {% endif %}
+                        </span>
+                        <span class="meta-item">
+                            <strong>时间:</strong> {{ question.created_at|date:"Y-m-d" }}
+                        </span>
+                         <span class="meta-item">
+                            <strong>浏览:</strong> {{ question.view_count }}
+                        </span>
+                    </div>
+
+                     {% if question.tags.all %}
+                        <div class="tags-container">
+                            {% for tag in question.tags.all %}
+                                <span class="tag">
+                                    <a href="{% url 'questions_by_tag' tag.pk %}">#{{ tag.name }}</a>
+                                </span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="no-questions-message">
+            <p>这里空空如也... 🤔</p>
+            <p>成为第一个 <a href="{% url 'ask_question' %}">提出问题</a> 的人吧！</p>
+        </div>
+    {% endif %}
+
+    {# Pagination Navigation #}
+    {% if page_obj.has_other_pages %}
+    <div class="pagination">
+        {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">&laquo; 上一页</a>
+        {% endif %}
+
+        <span class="current-page">
+            第 {{ page_obj.number }} 页，共 {{ page_obj.paginator.num_pages }} 页
+        </span>
+
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">下一页 &raquo;</a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

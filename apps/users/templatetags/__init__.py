@@ -1,0 +1,1 @@
+default_app_config = 'apps.users.apps.UsersConfig' # 如果你已经设置了，保持不变

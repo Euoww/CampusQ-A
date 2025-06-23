@@ -1,0 +1,231 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load comments_tags %}
+
+{% block title %}{{ question.title }} - 校园问答系统{% endblock %}
+
+{% block content %}
+<div class="question-detail-container">
+    <div class="question-header">
+        <h1>{{ question.title }}</h1>
+        <div class="question-meta">
+            <p>发布者：
+                {% if question.is_anonymous %}匿名{% else %}{{ question.author.username }}{% endif %}
+                · {{ question.created_at|date:"Y-m-d H:i" }}
+                · 浏览: {{ question.view_count }}
+            </p>
+            {% if question.tags.all %}
+                <div class="tags">
+                    {% for tag in question.tags.all %}
+                        <span class="tag">{{ tag.name }}</span>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            {# ！！新增：问题删除按钮 ！！ #}
+            {% if request.user == question.author %}
+                <div class="question-actions">
+                    <form method="post" action="{% url 'delete_question' question.id %}" class="inline-form">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger btn-sm">删除问题</button>
+                    </form>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="question-content">
+        <p>{{ question.content }}</p>
+    </div>
+
+    <div class="answer-section">
+        <h2>回答 ({{ question.answers.count }})</h2>
+        {% if question.answers.all %}
+            <div class="answer-list">
+                {% for answer in question.answers.all %}
+                    <div class="answer-item {% if answer.is_accepted %}accepted-answer{% endif %}">
+                        <p class="answer-content">{{ answer.content }}</p>
+                        <div class="answer-meta">
+                            <small>
+                                回答者：
+                                {% if answer.author.profile.avatar %}
+                                    <img src="{{ answer.author.profile.avatar.url }}" alt="{{ answer.author.username }}" class="comment-author-avatar">
+                                {% else %}
+                                    <img src="{% static 'images/default_avatar.png' %}" alt="默认头像" class="comment-author-avatar">
+                                {% endif %}
+                                {{ answer.author.username }} · {{ answer.created_at|date:"Y-m-d H:i" }}
+                            </small>
+                            <div class="answer-actions">
+                                {# 采纳/取消采纳功能 - 仅限提问者 #}
+                                {% if question.author == user %}
+                                    {% if answer.is_accepted %}
+                                        <form method="post" action="{% url 'unaccept_answer' answer.id %}" class="inline-form">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-secondary">取消采纳</button>
+                                        </form>
+                                    {% else %}
+                                        <form method="post" action="{% url 'accept_answer' answer.id %}" class="inline-form">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-primary">采纳此回答</button>
+                                        </form>
+                                    {% endif %}
+                                {% elif answer.is_accepted %}
+                                    <span class="accepted-badge">✅ 已采纳</span>
+                                {% endif %}
+
+                                {# 删除回答功能 - 提问者可删任意回答，回答者可删自己回答 #}
+                                {% if question.author == user or answer.author == user %}
+                                    <form method="post" action="{% url 'delete_answer' answer.id %}" class="inline-form">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-danger">删除回答</button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        {# 回答的评论区 #}
+                        <div class="comments-for-answer">
+                            <h4>评论此回答:</h4>
+                            {% get_comments_for_object answer as answer_comments %}
+                            {% if answer_comments %}
+                                <ul class="comment-list">
+                                    {% for comment in answer_comments %}
+                                        <li class="comment-item">
+                                            <div class="comment-header">
+                                                {% if comment.author.profile.avatar %}
+                                                    <img src="{{ comment.author.profile.avatar.url }}" alt="{{ comment.author.username }}" class="comment-author-avatar">
+                                                {% else %}
+                                                    <img src="{% static 'images/default_avatar.png' %}" alt="默认头像" class="comment-author-avatar">
+                                                {% endif %}
+                                                <strong>{{ comment.author.username }}</strong>
+                                                <small>{{ comment.created_at|date:"Y-m-d H:i" }}</small>
+                                                <div class="comment-actions">
+                                                    {# 删除评论按钮 #}
+                                                    {% if request.user == comment.author %}
+                                                        <form method="post" action="{% url 'delete_comment' comment.pk %}" class="inline-form">
+                                                            {% csrf_token %}
+                                                            <button type="submit" class="btn btn-sm btn-danger">删除</button>
+                                                        </form>
+                                                    {% elif request.user == comment.content_object.author %}
+                                                        <form method="post" action="{% url 'delete_comment' comment.pk %}" class="inline-form">
+                                                            {% csrf_token %}
+                                                            <button type="submit" class="btn btn-sm btn-danger">删除</button>
+                                                        </form>
+                                                    {% elif comment.content_object.question and request.user == comment.content_object.question.author %}
+                                                        <form method="post" action="{% url 'delete_comment' comment.pk %}" class="inline-form">
+                                                            {% csrf_token %}
+                                                            <button type="submit" class="btn btn-sm btn-danger">删除</button>
+                                                        </form>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            <p>{{ comment.content }}</p>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            {% else %}
+                                <p class="no-comments">暂无评论。</p>
+                            {% endif %}
+
+                            {% if user.is_authenticated %}
+                                <form method="post" action="{% url 'add_comment' answer_content_type_id answer.id %}" class="comment-form">
+                                    {% csrf_token %}
+                                    {{ comment_form.content }}
+                                    <button type="submit" class="btn btn-sm btn-primary">评论</button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="no-answers">还没有回答，快来抢首答吧！</p>
+        {% endif %}
+    </div>
+
+    {# 你的回答表单 #}
+    <div class="post-answer-section">
+        <h3>你的回答</h3>
+        <form method="post" action="{% url 'add_answer' question.id %}" class="answer-form">
+            {% csrf_token %}
+            <textarea name="content" rows="5" required placeholder="输入你的回答..."></textarea>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">提交回答</button>
+            </div>
+        </form>
+    </div>
+
+    {# 问题本身的评论区 #}
+    <div class="comments-for-question-section">
+        <h2>评论问题</h2>
+        {% if question_comments.object_list %}
+            <ul class="comment-list">
+                {% for comment in question_comments.object_list %}
+                    <li class="comment-item">
+                        <div class="comment-header">
+                            {% if comment.author.profile.avatar %}
+                                <img src="{{ comment.author.profile.avatar.url }}" alt="{{ comment.author.username }}" class="comment-author-avatar">
+                            {% else %}
+                                <img src="{% static 'images/default_avatar.png' %}" alt="默认头像" class="comment-author-avatar">
+                            {% endif %}
+                            <strong>{{ comment.author.username }}</strong>
+                            <small>{{ comment.created_at|date:"Y-m-d H:i" }}</small>
+                            <div class="comment-actions">
+                                {# 删除评论按钮 #}
+                                {% if request.user == comment.author %}
+                                    <form method="post" action="{% url 'delete_comment' comment.pk %}" class="inline-form">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-danger">删除</button>
+                                    </form>
+                                {% elif request.user == comment.content_object.author %}
+                                    <form method="post" action="{% url 'delete_comment' comment.pk %}" class="inline-form">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-danger">删除</button>
+                                    </form>
+                                {% elif comment.content_object.question and request.user == comment.content_object.question.author %}
+                                    <form method="post" action="{% url 'delete_comment' comment.pk %}" class="inline-form">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-danger">删除</button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <p>{{ comment.content }}</p>
+                    </li>
+                {% endfor %}
+            </ul>
+
+            {# 分页导航 #}
+            <div class="pagination">
+                <span class="step-links">
+                    {% if question_comments.has_previous %}
+                        <a href="?comment_page=1" class="btn btn-sm btn-outline-primary">&laquo; 第一页</a>
+                        <a href="?comment_page={{ question_comments.previous_page_number }}" class="btn btn-sm btn-outline-primary">上一页</a>
+                    {% endif %}
+
+                    <span class="current-page">
+                        第 {{ question_comments.number }} 页，共 {{ question_comments.paginator.num_pages }} 页
+                    </span>
+
+                    {% if question_comments.has_next %}
+                        <a href="?comment_page={{ question_comments.next_page_number }}" class="btn btn-sm btn-outline-primary">下一页</a>
+                        <a href="?comment_page={{ question_comments.paginator.num_pages }}" class="btn btn-sm btn-outline-primary">最后一页 &raquo;</a>
+                    {% endif %}
+                </span>
+            </div>
+        {% else %}
+            <p class="no-comments">暂无评论。</p>
+        {% endif %}
+
+        {% if user.is_authenticated %}
+            <form method="post" action="{% url 'add_comment' question_content_type_id question.id %}" class="comment-form">
+                {% csrf_token %}
+                {{ comment_form.content }}
+                <button type="submit" class="btn btn-sm btn-primary">评论</button>
+            </form>
+        {% else %}
+            <p class="login-prompt"><a href="{% url 'login' %}">登录</a>后才能评论哦！</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
